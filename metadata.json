@@ -1,0 +1,5 @@
+{
+  "name": "Unrent",
+  "description": "A sophisticated financial analysis tool to compare renting versus buying a home, featuring an 'Unrent Bar' optimization engine to help users achieve a <6 year break-even point.",
+  "requestFramePermissions": []
+}

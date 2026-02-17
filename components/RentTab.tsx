@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ResponsiveContainer, BarChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ComposedChart } from 'recharts';
-import { RentSettings, RentYearlyData } from '../types';
+import { RentSettings, RentYearlyData } from '../types.ts';
 
 interface Props {
   rentSettings: RentSettings;

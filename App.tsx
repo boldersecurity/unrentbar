@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, Upload, RotateCcw, Save } from 'lucide-react';
-import { RentTab } from './components/RentTab';
-import { BuyTab } from './components/BuyTab';
-import { CompareTab } from './components/CompareTab';
-import { AnalysisTab } from './components/AnalysisTab';
-import { GlobalSettings, BuyProfile, RentSettings, TabType } from './types';
-import { DEFAULT_GLOBAL_SETTINGS, DEFAULT_RENT_SETTINGS, DEFAULT_PROFILE } from './constants';
-import { calculateRentScenario, calculateBuyScenario } from './utils/calculations';
+import { RentTab } from './components/RentTab.tsx';
+import { BuyTab } from './components/BuyTab.tsx';
+import { CompareTab } from './components/CompareTab.tsx';
+import { AnalysisTab } from './components/AnalysisTab.tsx';
+import { GlobalSettings, BuyProfile, RentSettings, TabType } from './types.ts';
+import { DEFAULT_GLOBAL_SETTINGS, DEFAULT_RENT_SETTINGS, DEFAULT_PROFILE } from './constants.ts';
+import { calculateRentScenario, calculateBuyScenario } from './utils/calculations.ts';
 
 const STORAGE_KEY = 'rentVsBuy_v2';
 

@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { ArrowRight, CheckCircle, AlertCircle, TrendingDown, DollarSign, Percent, ChevronDown, ChevronUp } from 'lucide-react';
-import { BuyProfile, RentSettings, GlobalSettings, YearlyData } from '../types';
-import { calculateBuyScenario, calculateRentScenario, findOptimizedValue } from '../utils/calculations';
+import { BuyProfile, RentSettings, GlobalSettings, YearlyData } from '../types.ts';
+import { calculateBuyScenario, calculateRentScenario, findOptimizedValue } from '../utils/calculations.ts';
 
 interface Props {
   profiles: BuyProfile[];

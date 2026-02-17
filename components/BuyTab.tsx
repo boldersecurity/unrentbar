@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, Copy } from 'lucide-react';
-import { BuyProfile } from '../types';
-import { COLORS, DEFAULT_PROFILE } from '../constants';
+import { BuyProfile } from '../types.ts';
+import { COLORS, DEFAULT_PROFILE } from '../constants.ts';
 
 interface Props {
   profiles: BuyProfile[];

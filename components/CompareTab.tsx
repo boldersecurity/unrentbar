@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ReferenceLine } from 'recharts';
-import { GlobalSettings, BuyProfile, CalculationResult } from '../types';
+import { GlobalSettings, BuyProfile, CalculationResult } from '../types.ts';
 
 interface Props {
   globalSettings: GlobalSettings;

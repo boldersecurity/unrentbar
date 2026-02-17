@@ -1,5 +1,5 @@
 
-import { RentSettings, GlobalSettings, BuyProfile, CalculationResult, RentYearlyData, YearlyData } from '../types';
+import { RentSettings, GlobalSettings, BuyProfile, CalculationResult, RentYearlyData, YearlyData } from '../types.ts';
 
 export function calculateRentScenario(settings: RentSettings, years: number): RentYearlyData[] {
   const data: RentYearlyData[] = [];

@@ -1,5 +1,5 @@
 
-import { GlobalSettings, RentSettings, BuyProfile } from './types';
+import { GlobalSettings, RentSettings, BuyProfile } from './types.ts';
 
 export const COLORS = ['#c67b3c','#c0513f','#6b8f5e','#c9a84c','#5b8a7a','#7a6e5d','#d4883e','#8b5e3c'];
 

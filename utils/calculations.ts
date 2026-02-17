@@ -165,17 +165,26 @@ export function calculateBuyScenario(
       const currDelta = rows[i].wealthDelta;
       
       // Interpolate for year index
-      // wealthDelta goes from negative (prevDelta) to positive (currDelta)
-      // We want to find t where delta is 0
-      // 0 = prevDelta + (t) * (currDelta - prevDelta)
-      // -prevDelta = t * (currDelta - prevDelta)
-      // t = -prevDelta / (currDelta - prevDelta)
-      // Year = (Year i-1) + t
-      // Since i is 0-based index in rows array, rows[0] is Year 1.
-      // If i=0, prev year is Year 0.
+      // wealthDelta crosses 0 between year (i) and year (i+1) if we consider indices.
+      // But rows[i] is year y=i+1.
+      // If i=0 (Year 1), prevDelta is Year 0.
+      // Break even is between 0 and 1. fraction = |prev| / (|prev| + |curr|)
+      // preciseBreakeven = 0 + fraction = fraction.
+      // Actually year is 0-based index + 1. So year = i + fraction? No.
+      // If i=0, year is 0 + fraction? Year 1 is 1.0. 
+      // If it happens at 0.5 years, it is 0.5.
+      // Yes, Year 0 is t=0. Year 1 is t=1.
+      // i=0 represents t=1.
+      // So range is t=[0, 1]. Base is 0. 
+      // Base is i.
       
-      const fraction = Math.abs(prevDelta) / (currDelta - prevDelta);
-      preciseBreakeven = (i) + fraction; // i is the index, which equals (Year - 1). Year 0 is just 0.
+      const fraction = Math.abs(prevDelta) / (Math.abs(currDelta) + Math.abs(prevDelta));
+      // Since currDelta >= 0 and prevDelta < 0 usually (crossing from negative to positive)
+      // denominator is (currDelta - prevDelta).
+      const denom = currDelta - prevDelta;
+      const frac = denom === 0 ? 0 : Math.abs(prevDelta) / denom;
+      
+      preciseBreakeven = i + frac; 
       
       break;
     }

@@ -33,6 +33,8 @@ export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSet
   
   // Dynamic Optimization Logic
   let targetYear = 6;
+  // Use preciseBE for the check if available, defaulting to <= 6.0 logic.
+  // Note: If break even is exactly 6.0, currentBE is 6, so this passes.
   const isBeatUnrentBar = currentBE !== null && currentBE <= 6;
   
   if (isBeatUnrentBar) {

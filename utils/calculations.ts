@@ -1,3 +1,4 @@
+
 import { RentSettings, GlobalSettings, BuyProfile, CalculationResult, RentYearlyData, YearlyData } from '../types';
 
 export function calculateRentScenario(settings: RentSettings, years: number): RentYearlyData[] {
@@ -7,13 +8,11 @@ export function calculateRentScenario(settings: RentSettings, years: number): Re
   for (let y = 1; y <= years; y++) {
     const rentThisYear = settings.monthlyRent * Math.pow(1 + growth, y - 1);
     const annualRent = rentThisYear * 12;
-    const annualInsurance = settings.renterInsurance * 12;
     data.push({ 
       year: y, 
       monthlyRent: rentThisYear, 
       annualRent, 
-      annualInsurance, 
-      annualTotal: annualRent + annualInsurance 
+      annualTotal: annualRent 
     });
   }
   return data;
@@ -155,14 +154,34 @@ export function calculateBuyScenario(
   }
 
   let breakevenYear = null;
+  let preciseBreakeven = null;
+  const initialDelta = -(downPmt + closingCosts);
+
   for (let i = 0; i < rows.length; i++) {
     if (rows[i].wealthDelta >= 0) {
       breakevenYear = rows[i].year;
+      
+      const prevDelta = i === 0 ? initialDelta : rows[i-1].wealthDelta;
+      const currDelta = rows[i].wealthDelta;
+      
+      // Interpolate for year index
+      // wealthDelta goes from negative (prevDelta) to positive (currDelta)
+      // We want to find t where delta is 0
+      // 0 = prevDelta + (t) * (currDelta - prevDelta)
+      // -prevDelta = t * (currDelta - prevDelta)
+      // t = -prevDelta / (currDelta - prevDelta)
+      // Year = (Year i-1) + t
+      // Since i is 0-based index in rows array, rows[0] is Year 1.
+      // If i=0, prev year is Year 0.
+      
+      const fraction = Math.abs(prevDelta) / (currDelta - prevDelta);
+      preciseBreakeven = (i) + fraction; // i is the index, which equals (Year - 1). Year 0 is just 0.
+      
       break;
     }
   }
 
-  return { rows, downPmt, closingCosts, loanAmount, monthlyPI, breakevenYear };
+  return { rows, downPmt, closingCosts, loanAmount, monthlyPI, breakevenYear, preciseBreakeven };
 }
 
 export function findOptimizedValue(
@@ -182,35 +201,21 @@ export function findOptimizedValue(
   
   if (variable === 'price') max = profile.purchasePrice; // We usually want to lower price
   if (variable === 'rate') max = profile.interestRate; // We want to lower rate
-  if (variable === 'downpayment') { 
-      // Downpayment is tricky. Usually higher downpayment -> lower mortgage -> lower leverage.
-      // Depending on market return vs interest rate, this direction changes.
-      // We will check both directions from current.
-      min = 0;
-      max = 100;
+  
+  // Optimization function: returns breakeven year for a given value
+  const check = (val: number) => {
+      const testP = { ...profile };
+      if (variable === 'price') testP.purchasePrice = val;
+      if (variable === 'rate') testP.interestRate = val;
+      if (variable === 'downpayment') testP.downPaymentPct = val;
+      const res = calculateBuyScenario(testP, global, rentData);
+      return res.breakevenYear !== null ? res.breakevenYear : 999;
   }
 
-  let iterations = 0;
-  let bestVal: number | null = null;
-  
-  // Simple scan for now as the function is monotonic in simple scenarios
-  // For price: decreasing price -> breakeven year decreases.
-  // For rate: decreasing rate -> breakeven year decreases.
-  
   if (variable === 'downpayment') {
-      // Brute force scan 0 to 100 by 5 to find ANY solution, then refine?
-      // Actually, let's just use bisection on two ranges: [0, current] and [current, 100]
-      // Because sometimes 100% down (all cash) beats rent if market returns are low.
-      // But typically we want to optimize for specific BE year.
-      // Let's keep it simple: Try to find a value that hits BE <= targetYear.
-      
-      // Let's just step through reasonable values
+      // Simple scan for downpayment
       for(let dp = 0; dp <= 100; dp += 5) {
-          const testP = { ...profile, downPaymentPct: dp };
-          const res = calculateBuyScenario(testP, global, rentData);
-          if (res.breakevenYear !== null && res.breakevenYear <= targetYear) {
-              return dp; // Found a valid one
-          }
+          if (check(dp) <= targetYear) return dp;
       }
       return null;
   }
@@ -219,23 +224,14 @@ export function findOptimizedValue(
   let low = 0;
   let high = variable === 'price' ? profile.purchasePrice : profile.interestRate;
   
-  // If current is already good, return current
-  const currentRes = calculateBuyScenario(profile, global, rentData);
-  if (currentRes.breakevenYear !== null && currentRes.breakevenYear <= targetYear) return high;
+  if (check(high) <= targetYear) return high;
+
+  let iterations = 0;
+  let bestVal: number | null = null;
 
   while (iterations < 20) {
       const mid = (low + high) / 2;
-      const testP = { ...profile };
-      if (variable === 'price') testP.purchasePrice = mid;
-      if (variable === 'rate') testP.interestRate = mid;
-      
-      const res = calculateBuyScenario(testP, global, rentData);
-      
-      // If mid works (BE <= target), then this value is "good enough", try higher (worse) to find the boundary?
-      // No, we want the "highest price" that still works.
-      // Or "highest rate" that still works.
-      
-      if (res.breakevenYear !== null && res.breakevenYear <= targetYear) {
+      if (check(mid) <= targetYear) {
           bestVal = mid;
           low = mid; // Try to go higher (closer to original) to see if we can still pass
       } else {

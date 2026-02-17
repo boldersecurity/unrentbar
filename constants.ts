@@ -1,3 +1,4 @@
+
 import { GlobalSettings, RentSettings, BuyProfile } from './types';
 
 export const COLORS = ['#c67b3c','#c0513f','#6b8f5e','#c9a84c','#5b8a7a','#7a6e5d','#d4883e','#8b5e3c'];
@@ -12,7 +13,6 @@ export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
 export const DEFAULT_RENT_SETTINGS: RentSettings = {
   monthlyRent: 7050,
   annualRentIncrease: 5,
-  renterInsurance: 0,
 };
 
 export const DEFAULT_PROFILE: BuyProfile = {

@@ -1,3 +1,4 @@
+
 export type TabType = 'rent' | 'buy' | 'compare' | 'analysis';
 
 export interface GlobalSettings {
@@ -10,7 +11,6 @@ export interface GlobalSettings {
 export interface RentSettings {
   monthlyRent: number;
   annualRentIncrease: number;
-  renterInsurance: number;
 }
 
 export interface BuyProfile {
@@ -64,7 +64,6 @@ export interface RentYearlyData {
   year: number;
   monthlyRent: number;
   annualRent: number;
-  annualInsurance: number;
   annualTotal: number;
 }
 
@@ -75,4 +74,5 @@ export interface CalculationResult {
   loanAmount: number;
   monthlyPI: number;
   breakevenYear: number | null;
+  preciseBreakeven: number | null;
 }

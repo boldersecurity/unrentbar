@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ResponsiveContainer, BarChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ComposedChart } from 'recharts';
 import { RentSettings, RentYearlyData } from '../types';
@@ -25,7 +26,7 @@ export const RentTab: React.FC<Props> = ({ rentSettings, setRentSettings, rentDa
     <div className="grid gap-6">
       <div className="bg-surface border border-border rounded-lg p-6 shadow-sm">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">Rent Configuration</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
           <div>
             <label className="block text-xs font-semibold text-text-dim uppercase tracking-wide mb-1">Monthly Rent</label>
             <div className="relative">
@@ -37,6 +38,7 @@ export const RentTab: React.FC<Props> = ({ rentSettings, setRentSettings, rentDa
                 className="w-full bg-surface2 border border-border rounded-md py-2 pl-7 pr-3 text-sm focus:outline-none focus:border-accent"
               />
             </div>
+            <p className="text-xs text-text-dim mt-1">Current monthly rent payment.</p>
           </div>
           <div>
             <label className="block text-xs font-semibold text-text-dim uppercase tracking-wide mb-1">Annual Increase</label>
@@ -50,19 +52,7 @@ export const RentTab: React.FC<Props> = ({ rentSettings, setRentSettings, rentDa
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim">%</span>
             </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-dim uppercase tracking-wide mb-1">Renter's Insurance</label>
-            <div className="relative">
-               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim">$</span>
-              <input 
-                type="number" 
-                value={rentSettings.renterInsurance} 
-                onChange={e => handleChange('renterInsurance', e.target.value)}
-                className="w-full bg-surface2 border border-border rounded-md py-2 pl-7 pr-3 text-sm focus:outline-none focus:border-accent"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-dim">/mo</span>
-            </div>
+            <p className="text-xs text-text-dim mt-1">Expected yearly rent hike.</p>
           </div>
         </div>
       </div>

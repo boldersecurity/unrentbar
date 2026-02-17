@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Download, Upload, RotateCcw, Save } from 'lucide-react';
 import { RentTab } from './components/RentTab';
@@ -99,13 +100,23 @@ const App: React.FC = () => {
     result: calculateBuyScenario(p, globalSettings, rentData)
   }));
 
+  const getTabColor = (tab: TabType) => {
+    switch (tab) {
+      case 'rent': return 'bg-orange-50/30';
+      case 'buy': return 'bg-blue-50/30';
+      case 'analysis': return 'bg-purple-50/30';
+      case 'compare': return 'bg-green-50/30';
+      default: return '';
+    }
+  };
+
   return (
-    <div className="min-h-screen pb-12 font-sans text-text">
+    <div className={`min-h-screen pb-12 font-sans text-text transition-colors duration-500 ${getTabColor(activeTab)}`}>
       {/* Header */}
       <header className="bg-surface border-b border-border px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm sticky top-0 z-50">
         <div>
-          <h1 className="text-xl font-bold text-text">Rent vs Buy Financial Analysis</h1>
-          <div className="text-sm text-text-dim">Optimize for the "Unrent Bar" (&lt;6 year break-even)</div>
+          <h1 className="text-xl font-bold text-text">Unrent</h1>
+          <div className="text-sm text-text-dim">Rent vs Buy Financial Analysis so you can stop renting with a &lt; 6 year break-even</div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -126,10 +137,10 @@ const App: React.FC = () => {
       {/* Tab Navigation */}
       <div className="bg-surface border-b border-border px-6 flex overflow-x-auto no-scrollbar">
         {[
-          { id: 'rent', label: 'Rent Scenario' },
+          { id: 'rent', label: 'Rent' },
           { id: 'buy', label: 'Buy Profiles' },
-          { id: 'compare', label: 'Comparison' },
-          { id: 'analysis', label: 'Analysis' }
+          { id: 'analysis', label: 'Analyze Home' },
+          { id: 'compare', label: 'Compare Homes' },
         ].map(tab => (
           <button
             key={tab.id}
@@ -163,20 +174,20 @@ const App: React.FC = () => {
           />
         )}
         
+        {activeTab === 'analysis' && (
+          <AnalysisTab
+            profiles={profiles}
+            rentSettings={rentSettings}
+            globalSettings={globalSettings}
+          />
+        )}
+
         {activeTab === 'compare' && (
           <CompareTab 
             globalSettings={globalSettings}
             setGlobalSettings={setGlobalSettings}
             profiles={profiles}
             calculations={calculations}
-          />
-        )}
-
-        {activeTab === 'analysis' && (
-          <AnalysisTab
-            profiles={profiles}
-            rentSettings={rentSettings}
-            globalSettings={globalSettings}
           />
         )}
       </main>

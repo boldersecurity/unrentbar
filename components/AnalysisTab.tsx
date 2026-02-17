@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
-import { ArrowRight, CheckCircle, AlertCircle, TrendingDown, DollarSign, Percent, Sparkles, Loader2, ChevronDown, ChevronUp, Info, HelpCircle, X } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { ArrowRight, CheckCircle, AlertCircle, TrendingDown, DollarSign, Percent, ChevronDown, ChevronUp } from 'lucide-react';
 import { BuyProfile, RentSettings, GlobalSettings, YearlyData } from '../types';
 import { calculateBuyScenario, calculateRentScenario, findOptimizedValue } from '../utils/calculations';
 
@@ -12,65 +12,44 @@ interface Props {
 
 export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSettings }) => {
   const [selectedId, setSelectedId] = useState<string>(profiles[0]?.id || '');
-  const [geminiAdvice, setGeminiAdvice] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   
   // Table State
   const [isTableExpanded, setIsTableExpanded] = useState(false);
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: string; rect: DOMRect } | null>(null);
 
-  const selectedProfile = profiles.find(p => p.id === selectedId);
+  const selectedProfile = profiles.find(p => p.id === selectedId) || profiles[0];
+  
+  // Ensure selectedId matches current selection if profiles changed
+  React.useEffect(() => {
+      if (selectedProfile && selectedProfile.id !== selectedId) setSelectedId(selectedProfile.id);
+  }, [profiles, selectedId, selectedProfile]);
+
   if (!selectedProfile) return <div className="p-8 text-center text-text-dim">Please create a buy profile first.</div>;
 
   const rentData = calculateRentScenario(rentSettings, globalSettings.forecastYears);
   const currentCalc = calculateBuyScenario(selectedProfile, globalSettings, rentData);
   const currentBE = currentCalc.breakevenYear;
-  const isGood = currentBE !== null && currentBE <= 6;
-
-  // Optimizations
-  const optPrice = findOptimizedValue(6, 'price', selectedProfile, globalSettings, rentSettings);
-  const optRate = findOptimizedValue(6, 'rate', selectedProfile, globalSettings, rentSettings);
-  const optDown = findOptimizedValue(6, 'downpayment', selectedProfile, globalSettings, rentSettings);
-
-  const getGeminiAdvice = async () => {
-    setLoading(true);
-    setGeminiAdvice(null);
-    try {
-      if (!process.env.API_KEY) {
-         setGeminiAdvice("API Key not found. Please configure the environment.");
-         return;
-      }
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `
-        Act as a real estate financial advisor.
-        Analyze this Rent vs Buy scenario:
-        
-        Rent: $${rentSettings.monthlyRent}/mo, increasing ${rentSettings.annualRentIncrease}%/yr.
-        Buy: $${selectedProfile.purchasePrice}, Rate: ${selectedProfile.interestRate}%, Down: ${selectedProfile.downPaymentPct}%.
-        
-        Current Break-even Year: ${currentBE ?? 'Never within 30 years'}.
-        Target Break-even: 6 years (The "Unrent Bar").
-        
-        Optimization math suggests:
-        1. Target Price: ${optPrice ? '$' + Math.round(optPrice).toLocaleString() : 'Not possible'}
-        2. Target Rate: ${optRate ? optRate.toFixed(2) + '%' : 'Not possible'}
-        
-        Provide a concise, strategic 3-bullet point plan to help the buyer achieve this 6-year break-even. 
-        Focus on negotiation, market timing, or financing strategies.
-      `;
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-      });
-      setGeminiAdvice(response.text || "No advice generated.");
-    } catch (e) {
-      setGeminiAdvice("Error generating advice. Please try again.");
-      console.error(e);
-    } finally {
-      setLoading(false);
+  const preciseBE = currentCalc.preciseBreakeven;
+  
+  // Dynamic Optimization Logic
+  let targetYear = 6;
+  const isBeatUnrentBar = currentBE !== null && currentBE <= 6;
+  
+  if (isBeatUnrentBar) {
+    if (currentBE! > 1) {
+      targetYear = currentBE! - 1;
+    } else {
+      targetYear = 1; // Already maxed out
     }
-  };
+  }
+
+  // Show optimizations unless we are already at Year 1 break-even
+  const showOptimizations = currentBE !== 1;
+
+  // Optimizations based on dynamic targetYear
+  const optPrice = findOptimizedValue(targetYear, 'price', selectedProfile, globalSettings, rentSettings);
+  const optRate = findOptimizedValue(targetYear, 'rate', selectedProfile, globalSettings, rentSettings);
+  const optDown = findOptimizedValue(targetYear, 'downpayment', selectedProfile, globalSettings, rentSettings);
 
   // Tooltip Logic
   const handleCellEnter = (e: React.MouseEvent, row: number, col: string) => {
@@ -134,28 +113,35 @@ export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSet
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
       
-      {/* Selector */}
-      <div className="flex items-center gap-4 bg-surface p-4 rounded-lg border border-border shadow-sm">
-        <label className="font-semibold text-sm text-text-dim uppercase tracking-wide">Analyze Profile:</label>
-        <select 
-          value={selectedId} 
-          onChange={(e) => { setSelectedId(e.target.value); setGeminiAdvice(null); }}
-          className="bg-surface2 border border-border rounded-md px-4 py-2 font-medium text-text focus:outline-none focus:border-accent"
-        >
-          {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+      {/* Selector Buttons */}
+      <div className="flex flex-wrap items-center gap-2 bg-surface p-4 rounded-lg border border-border shadow-sm">
+        <label className="font-semibold text-sm text-text-dim uppercase tracking-wide mr-2">Select Profile:</label>
+        {profiles.map(p => (
+            <button
+                key={p.id}
+                onClick={() => setSelectedId(p.id)}
+                className={`
+                    px-4 py-2 rounded-md text-sm font-medium transition-all
+                    ${selectedId === p.id 
+                        ? 'bg-accent text-white shadow-md' 
+                        : 'bg-surface2 hover:bg-surface2/80 text-text border border-transparent'}
+                `}
+            >
+                {p.name}
+            </button>
+        ))}
       </div>
 
       {/* Main Status */}
       <div className={`
         relative overflow-hidden rounded-xl border p-8 text-center transition-all
-        ${isGood ? 'bg-green/10 border-green' : 'bg-surface border-border'}
+        ${isBeatUnrentBar ? 'bg-green/10 border-green' : 'bg-surface border-border'}
       `}>
         <div className="relative z-10">
           <div className="text-sm font-bold uppercase tracking-widest mb-2 text-text-dim">Break Even Point</div>
           <div className="text-5xl font-bold mb-4 flex items-center justify-center gap-3">
-             {currentBE ? (
-               <>Year {currentBE}</>
+             {preciseBE ? (
+               <>Year {preciseBE.toFixed(1)}</>
              ) : (
                <span className="text-red">30+ Years</span>
              )}
@@ -167,10 +153,17 @@ export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSet
             <div className={`h-2 w-16 rounded-full ${!currentBE || currentBE > 10 ? 'bg-red' : 'bg-border'}`} />
           </div>
 
-          {isGood ? (
-             <div className="flex items-center justify-center gap-2 text-green font-bold text-lg">
-               <CheckCircle size={24} />
-               <span>Excellent! You beat the "Unrent Bar" (6 Years).</span>
+          {isBeatUnrentBar ? (
+             <div className="flex flex-col items-center justify-center gap-2 text-green font-bold text-lg">
+               <div className="flex items-center gap-2">
+                 <CheckCircle size={24} />
+                 <span>Excellent! You beat the "Unrent Bar" (6 Years).</span>
+               </div>
+               {currentBE! > 1 && (
+                 <span className="text-sm font-normal text-text-dim mt-1">
+                   Let's optimize for Year {targetYear}...
+                 </span>
+               )}
              </div>
           ) : (
              <div className="flex flex-col items-center gap-2 text-text">
@@ -188,11 +181,11 @@ export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSet
       </div>
 
       {/* Optimizations */}
-      {!isGood && (
+      {showOptimizations && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <OptimizationCard 
             icon={<DollarSign className="text-accent" />}
-            title="Target Offer Price"
+            title={`Target Offer Price (Yr ${targetYear})`}
             current={selectedProfile.purchasePrice}
             target={optPrice}
             format={(v: number) => '$' + Math.round(v).toLocaleString()}
@@ -202,7 +195,7 @@ export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSet
 
           <OptimizationCard 
             icon={<Percent className="text-teal" />}
-            title="Target Interest Rate"
+            title={`Target Interest Rate (Yr ${targetYear})`}
             current={selectedProfile.interestRate}
             target={optRate}
             format={(v: number) => v.toFixed(3) + '%'}
@@ -214,7 +207,7 @@ export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSet
 
           <OptimizationCard 
             icon={<TrendingDown className="text-purple" />}
-            title="Target Down Payment"
+            title={`Target Down Payment (Yr ${targetYear})`}
             current={selectedProfile.downPaymentPct}
             target={optDown}
             format={(v: number) => v + '%'}
@@ -225,35 +218,6 @@ export const AnalysisTab: React.FC<Props> = ({ profiles, rentSettings, globalSet
           />
         </div>
       )}
-
-      {/* Gemini AI Advisor */}
-      <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-         <div className="flex items-center justify-between mb-4">
-           <h3 className="text-lg font-bold flex items-center gap-2">
-             <Sparkles className="text-accent" size={20} />
-             AI Strategy Advisor
-           </h3>
-           <button 
-             onClick={getGeminiAdvice}
-             disabled={loading}
-             className="px-4 py-2 bg-text text-bg rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-2"
-           >
-             {loading ? <Loader2 className="animate-spin" size={16} /> : 'Generate Strategy'}
-           </button>
-         </div>
-         
-         <div className="min-h-[100px] bg-bg/50 rounded-lg p-6 border border-border/50 text-text/90 leading-relaxed">
-            {geminiAdvice ? (
-              <div className="markdown prose prose-sm max-w-none">
-                {geminiAdvice.split('\n').map((line, i) => <p key={i} className="mb-2">{line}</p>)}
-              </div>
-            ) : (
-              <p className="text-text-dim italic text-center py-4">
-                Click "Generate Strategy" to get AI-powered negotiation and financing advice based on your numbers.
-              </p>
-            )}
-         </div>
-      </div>
 
       {/* Yearly Data Table */}
       <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden transition-all">
@@ -348,7 +312,7 @@ const OptimizationCard = ({ icon, title, current, target, format, label, diff, d
       
       {isImpossible ? (
          <div className="text-text-dim text-sm italic">
-           Even at 0, this variable alone cannot achieve the 6-year target.
+           Even at 0, this variable alone cannot achieve the {title.includes('Yr') ? 'target' : '6-year target'}.
          </div>
       ) : (
         <>
@@ -382,11 +346,6 @@ function getTooltipContent(col: string, row: YearlyData, p: BuyProfile, g: Globa
   const grossSale = row.homeValue;
   const sellingCosts = grossSale * sellingCostPct;
   const netProceeds = grossSale - sellingCosts;
-  
-  // Approximate buy costs from previous context (not stored in row, so we estimate logic)
-  // For precise Cap Gains, we'd need purchase price + closing costs. 
-  // We can approximate gain ~ NetProceeds - Mortgage - InitialEquity? No.
-  // We'll just show the formula components we have.
   
   switch (col) {
     case 'homeValue':
